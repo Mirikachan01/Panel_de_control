@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Administrativo</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#0f172a;
+    color:white;
+    margin:0;
+    padding:20px;
+}
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:15px;
+    margin-bottom:20px;
+}
+input,button{
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    margin:5px 0;
+    width:100%;
+}
+button{
+    background:#22c55e;
+    color:white;
+    cursor:pointer;
+}
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+}
+.stat-box{
+    background:#334155;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+th,td{
+    padding:10px;
+    text-align:center;
+}
+th{
+    background:#334155;
+}
+td{
+    background:#1e293b;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>📊 Panel de Ventas</h1>
+
+<div class="card">
+<h2>Agregar Venta</h2>
+
+<input type="date" id="fecha">
+<input type="text" id="producto" placeholder="Nombre del producto">
+<input type="number" id="compra" placeholder="Costo de compra">
+<input type="number" id="venta" placeholder="Costo de venta">
+
+<button onclick="guardar()">Guardar</button>
+</div>
+
+<div class="stats">
+<div class="stat-box">
+<h3>Ganancia Total</h3>
+<p id="total">Bs 0</p>
+</div>
+
+<div class="stat-box">
+<h3>Últimos 7 días</h3>
+<p id="semana">Bs 0</p>
+</div>
+
+<div class="stat-box">
+<h3>Este Mes</h3>
+<p id="mes">Bs 0</p>
+</div>
+</div>
+
+<div class="card">
+<h2>Registros</h2>
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Producto</th>
+<th>Compra</th>
+<th>Venta</th>
+<th>Ganancia</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+
+const URL = "https://script.google.com/macros/s/AKfycbwNQS2a6gP_TlfrBG2xfRW1bk_iMTcq-RqvbnTLZ8YodJIL69-v8QJpl0frRJUo7qCmDg/exec";
+
+async function guardar(){
+
+    const fecha = document.getElementById("fecha").value;
+    const producto = document.getElementById("producto").value;
+    const compra = parseFloat(document.getElementById("compra").value);
+    const venta = parseFloat(document.getElementById("venta").value);
+
+    await fetch(URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({fecha,producto,compra,venta})
+    });
+
+    alert("Guardado correctamente");
+    cargarDatos();
+}
+
+async function cargarDatos(){
+
+    const res = await fetch(URL);
+    const data = await res.json();
+
+    let tabla = document.getElementById("tabla");
+    tabla.innerHTML = "";
+
+    let total = 0;
+    let semana = 0;
+    let mes = 0;
+
+    const hoy = new Date();
+    const hace7 = new Date();
+    hace7.setDate(hoy.getDate() - 7);
+
+    data.slice(1).forEach(row => {
+
+        const fecha = new Date(row[0]);
+        const ganancia = Number(row[4]);
+
+        total += ganancia;
+
+        if(fecha >= hace7) semana += ganancia;
+        if(fecha.getMonth() === hoy.getMonth()) mes += ganancia;
+
+        tabla.innerHTML += `
+        <tr>
+            <td>${fecha.toLocaleDateString()}</td>
+            <td>${row[1]}</td>
+            <td>${row[2]}</td>
+            <td>${row[3]}</td>
+            <td style="color:#22c55e">${ganancia}</td>
+        </tr>`;
+    });
+
+    document.getElementById("total").innerText = "Bs " + total;
+    document.getElementById("semana").innerText = "Bs " + semana;
+    document.getElementById("mes").innerText = "Bs " + mes;
+}
+
+cargarDatos();
+
+</script>
+
+</body>
+</html>
